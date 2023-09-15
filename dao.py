@@ -5,6 +5,9 @@ class Dao:
     def get(self, id):
         pass
 
+    def delete(self, id):
+        pass
+
 
 class InMemoryDao(Dao):
     def __init__(self):
@@ -15,3 +18,6 @@ class InMemoryDao(Dao):
 
     def get(self, id):
         return self.memory[id]
+
+    def delete(self, id):
+        self.memory.pop(id)

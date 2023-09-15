@@ -33,14 +33,17 @@ async def select_group(faculty: str, update: Update):
     await query.answer()
     keyboard_buttons = [[]]
     count_columns = 2
-    for i in range(0, int(len(service.getGroupsByFaculty(faculty)) / count_columns)):
+    groups = service.getGroupsByFaculty(faculty)[:76]
+    for i in range(0, int(len(groups) / count_columns)):
         row = []
         for j in range(0, count_columns):
             row.append(InlineKeyboardButton(
-                text=service.getGroupsByFaculty(faculty)[i * count_columns + j],
-                callback_data="2" + service.getGroupsByFaculty(faculty)[i * count_columns + j]
+                text=groups[i * count_columns + j],
+                callback_data="2" + groups[i * count_columns + j]
             ))
         keyboard_buttons.append(row)
+    if len(groups) % 2 != 0:
+        keyboard_buttons.append([InlineKeyboardButton(text=groups[::-1][0], callback_data="2" + groups[::-1][0])])
     keyboard_buttons.append([InlineKeyboardButton(text="Назад", callback_data="2cancel")])
     markup = InlineKeyboardMarkup(keyboard_buttons)
     await query.edit_message_text(text=f"Выберите группу", reply_markup=markup)
@@ -52,6 +55,16 @@ async def handle_pressing_button(update: Update, context: ContextTypes.DEFAULT_T
         await select_group(query.data.replace("1", ""), update)
         return
 
+    if query.data == "2cancel":
+        keyboard_buttons = [[]]
+        for faculty in service.getFaculties():
+            keyboard_buttons.append([InlineKeyboardButton(text=abbreviation.abbreviation(faculty),
+                                                          callback_data="1" + abbreviation.abbreviation(faculty))])
+
+        markup = InlineKeyboardMarkup(keyboard_buttons)
+        await query.edit_message_text(text="Выберите факультет/направление", reply_markup=markup)
+        return
+
     if query.data[0] == "2":
         await save_group(update.callback_query.message.chat_id, query.data, update, context)
         return
@@ -60,19 +73,9 @@ async def handle_pressing_button(update: Update, context: ContextTypes.DEFAULT_T
         await get_timetable_by_day(update, context, query.data, update.callback_query.message.chat_id)
         return
 
-    if query.data == "2cancel":
-        keyboard_buttons = [[]]
-        for faculty in service.getFaculties():
-            keyboard_buttons.append([InlineKeyboardButton(text=abbreviation.abbreviation(faculty),
-                                                      callback_data="1" + abbreviation.abbreviation(faculty))])
-
-        markup = InlineKeyboardMarkup(keyboard_buttons)
-        await query.edit_message_text(text="Выберите факультет/направление", reply_markup=markup)
-        return
-
     await query.answer()
-
     await query.edit_message_text(text=f"Selected option: {query.data}")
+
 
 dao = InMemoryDao()
 
@@ -130,6 +133,9 @@ async def get_timetable_by_day(update: Update, context: ContextTypes.DEFAULT_TYP
                                f"Тип пары: {current_type(type, chat_id)}\n"
                                f"-----------------\n")
 
+            if text == "":
+                text = "Гуляйте"
+
             query = update.callback_query
             await query.answer()
             await query.edit_message_text(text)
@@ -149,6 +155,9 @@ async def get_timetable_by_day(update: Update, context: ContextTypes.DEFAULT_TYP
                                f"Аудитория: {day['audienceId']}\n"
                                f"Тип пары: {current_type(type, chat_id)}\n"
                                f"-----------------\n")
+
+            if text == "":
+                text = "Гуляйте"
 
             query = update.callback_query
             await query.answer()
@@ -173,6 +182,10 @@ async def get_timetable_by_day(update: Update, context: ContextTypes.DEFAULT_TYP
                                    f"Тип пары: {current_type(type, chat_id)}\n"
                                    f"----------------------\n"
                                    )
+
+            if text == "":
+                text = "Гуляйте"
+
             query = update.callback_query
             await query.answer()
             await query.edit_message_text(text)
@@ -198,11 +211,22 @@ async def get_timetable_by_day(update: Update, context: ContextTypes.DEFAULT_TYP
                                    f"Тип пары: {current_type(type, chat_id)}\n"
                                    f"----------------------\n"
                                    )
+
+            if text == "":
+                text = "Гуляйте"
+
             query = update.callback_query
             await query.answer()
             await query.edit_message_text(text[:4096])
             if len(text) > 4096:
                 await query.message.reply_text(text[4096:])
+
+
+async def group_change(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await bot.set_my_commands([])
+    await select_faculty(update, context)
+    dao.delete(update.message.chat_id)
+
 
 
 async def save_group(chat_id, group, update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -216,6 +240,11 @@ async def save_group(chat_id, group, update: Update, context: ContextTypes.DEFAU
 
 
 async def get_timetable(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        dao.get(update.message.chat_id)
+    except:
+        await update.message.reply_text(text="Сначала выберите группу")
+        return
     keyboard_buttons = [
         [InlineKeyboardButton(text="Сегодня", callback_data="3today")],
         [InlineKeyboardButton(text="Завтра", callback_data="3tomorrow")],
@@ -235,6 +264,7 @@ if __name__ == '__main__':
     app.add_handler(CommandHandler('start', start_command))
     # app.add_handler(CommandHandler('stop', end_command))
     app.add_handler(CommandHandler("get_timetable", get_timetable))
+    app.add_handler(CommandHandler("change_group", group_change))
     # Queries
     app.add_handler(CallbackQueryHandler(handle_pressing_button))
 
