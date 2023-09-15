@@ -29,8 +29,8 @@ async def select_faculty(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def select_group(faculty: str, update: Update):
-    querry = update.callback_query
-    await querry.answer()
+    query = update.callback_query
+    await query.answer()
     keyboard_buttons = [[]]
     count_columns = 2
     for i in range(0, int(len(service.getGroupsByFaculty(faculty)) / count_columns)):
@@ -43,7 +43,7 @@ async def select_group(faculty: str, update: Update):
         keyboard_buttons.append(row)
     keyboard_buttons.append([InlineKeyboardButton(text="Назад", callback_data="2cancel")])
     markup = InlineKeyboardMarkup(keyboard_buttons)
-    await querry.edit_message_text(text=f"Выберите группу", reply_markup=markup)
+    await query.edit_message_text(text=f"Выберите группу", reply_markup=markup)
 
 
 async def handle_pressing_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -77,6 +77,41 @@ async def handle_pressing_button(update: Update, context: ContextTypes.DEFAULT_T
 dao = InMemoryDao()
 
 
+def current_type(type, chat_id):
+    match type:
+        case "lec":
+            type = "Лекция"
+            return type
+        case "prac":
+            type = "Практика"
+            return type
+        case "exam":
+            type = "Экзамен"
+            return type
+        case "lab":
+            if (chat_id == 974335854) or (chat_id == 504728940) or (chat_id == 1258770584):
+                type = "Сидим дома бляд"
+                return type
+            else:
+                type = "Лаб. работа"
+                return type
+        case "hol":
+            type = "Выходной"
+            return type
+        case "cred":
+            type = "Зачет"
+            return type
+        case "cons":
+            type = "Консультация"
+            return type
+        case "fepo":
+            type = "ФЭПО"
+            return type
+        case "none":
+            type = "Я хз"
+            return type
+
+
 async def get_timetable_by_day(update: Update, context: ContextTypes.DEFAULT_TYPE, day, chat_id):
     match day:
         case "3today":
@@ -86,36 +121,13 @@ async def get_timetable_by_day(update: Update, context: ContextTypes.DEFAULT_TYP
             group_name = group_name[1:]
             text = ""
             timetable = service.get_timetable_by_day(group_name, day)
-            for discipline in timetable["disciplines"]:
-                type = discipline['type']
-                match type:
-                    case "lec":
-                        type = "Лекция"
-                    case "prac":
-                        type = "Практика"
-                    case "exam":
-                        type = "Экзамен"
-                    case "lab":
-                        if chat_id == 974335854 or chat_id == 504728940:
-                            type = "Сидим дома бляд"
-                        else:
-                            type = "Лаб. работа"
-                    case "hol":
-                        type = "Выходной"
-                    case "cred":
-                        type = "Зачет"
-                    case "cons":
-                        type = "Консультация"
-                    case "fepo":
-                        type = "ФЭПО"
-                    case "none":
-                        type = "Я хз"
-
-                text = text + (f"Время: {discipline['time']}\n"
-                               f"Название: {discipline['name']}\n"
-                               f"Преподаватель: {discipline['teacherName']}\n"
-                               f"Аудитория: {discipline['audienceId']}\n"
-                               f"Тип пары: {type}\n"
+            for day in timetable["disciplines"]:
+                type = day['type']
+                text = text + (f"Время: {day['time']}\n"
+                               f"Название: {day['name']}\n"
+                               f"Преподаватель: {day['teacherName']}\n"
+                               f"Аудитория: {day['audienceId']}\n"
+                               f"Тип пары: {current_type(type, chat_id)}\n"
                                f"-----------------\n")
 
             query = update.callback_query
@@ -123,44 +135,44 @@ async def get_timetable_by_day(update: Update, context: ContextTypes.DEFAULT_TYP
             await query.edit_message_text(text)
 
         case "3tomorrow":
-            day = datetime.date(datetime.today()) + timedelta(days=1)
+            day = datetime.date(datetime.today()) + timedelta(days=3)
             day = day.strftime("%d.%m.%Y")
             group_name = dao.get(chat_id)
             group_name = group_name[1:]
             text = ""
             timetable = service.get_timetable_by_day(group_name, day)
-            for discipline in timetable["disciplines"]:
-                type = discipline['type']
-                match type:
-                    case "lec":
-                        type = "Лекция"
-                    case "prac":
-                        type = "Практика"
-                    case "exam":
-                        type = "Экзамен"
-                    case "lab":
-                        if chat_id == 974335854 or chat_id == 504728940:
-                            type = "Сидим дома бляд"
-                        else:
-                            type = "Лаб. работа"
-                    case "hol":
-                        type = "Выходной"
-                    case "cred":
-                        type = "Зачет"
-                    case "cons":
-                        type = "Консультация"
-                    case "fepo":
-                        type = "ФЭПО"
-                    case "none":
-                        type = "Я хз"
-
-                text = text + (f"Время: {discipline['time']}\n"
-                               f"Название: {discipline['name']}\n"
-                               f"Преподаватель: {discipline['teacherName']}\n"
-                               f"Аудитория: {discipline['audienceId']}\n"
-                               f"Тип пары: {type}\n"
+            for day in timetable["disciplines"]:
+                type = day['type']
+                text = text + (f"Время: {day['time']}\n"
+                               f"Название: {day['name']}\n"
+                               f"Преподаватель: {day['teacherName']}\n"
+                               f"Аудитория: {day['audienceId']}\n"
+                               f"Тип пары: {current_type(type, chat_id)}\n"
                                f"-----------------\n")
 
+            query = update.callback_query
+            await query.answer()
+            await query.edit_message_text(text)
+
+        case "3current_week":
+            start_of_week = service.DateManager().get_start_of_week(datetime.date(datetime.today()).strftime("%d.%m.%Y"))
+            end_of_week = service.DateManager().get_end_of_week(datetime.date(datetime.today()).strftime("%d.%m.%Y"))
+            group_name = dao.get(chat_id)
+            group_name = group_name[1:]
+            text = ""
+            week = service.get_timetable_by_days(group_name, start_of_week, end_of_week)
+            for day in week:
+                text = text + "\n***********************\n"
+                text = text + "Дата: " + day["date"] + "\n"
+                for timetable in day["disciplines"]:
+                    type = timetable['type']
+                    text = text + (f"Время: {timetable['time']}\n"
+                                   f"Название: {timetable['name']}\n"
+                                   f"Преподаватель: {timetable['teacherName']}\n"
+                                   f"Аудитория: {timetable['audienceId']}\n"
+                                   f"Тип пары: {current_type(type, chat_id)}\n"
+                                   f"----------------------\n"
+                                   )
             query = update.callback_query
             await query.answer()
             await query.edit_message_text(text)

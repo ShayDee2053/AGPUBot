@@ -1,6 +1,7 @@
 import json
 import requests
 import abbreviation
+from datetime import (datetime, timedelta)
 
 
 url = "http://merqury.fun:8080/api/timetable/groups"
@@ -38,22 +39,54 @@ def get_timetable_by_day(group_name, date):
 
 def get_timetable_by_days(group_name, start_date, end_date):
     url_2 = "http://merqury.fun:8080/api/timetable/days?"
-    response = requests.get(url_2 + "groupId=" + group_name + "&startDate=" + start_date + "&endDate=" + end_date + "&removeEmptyDays")
+    response = requests.get(url_2 + "groupId=" + group_name + "&startDate=" + start_date +
+                            "&endDate=" + end_date + "&removeEmptyDays")
     return json.loads(response.text)
 
 
+class DateManager:
+    @staticmethod
+    def get_start_of_week(date: str):
+        date1 = datetime.strptime(date, "%d.%m.%Y")
+        day = date1.weekday()
+        if day == 0:
+            return date
+        elif day == 1:
+            return (date1 - timedelta(days=day)).strftime("%d.%m.%Y")
+        elif day == 2:
+            return (date1 - timedelta(days=day)).strftime("%d.%m.%Y")
+        elif day == 3:
+            return (date1 - timedelta(days=day)).strftime("%d.%m.%Y")
+        elif day == 4:
+            return (date1 - timedelta(days=day)).strftime("%d.%m.%Y")
+        elif day == 5:
+            return (date1 - timedelta(days=day)).strftime("%d.%m.%Y")
+        elif day == 6:
+            return (date1 - timedelta(days=day)).strftime("%d.%m.%Y")
+
+    @staticmethod
+    def get_end_of_week(date: str):
+        date1 = datetime.strptime(date, "%d.%m.%Y")
+        day = date1.weekday()
+        if day == 0:
+            return (date1 + timedelta(days=6)).strftime("%d.%m.%Y")
+        elif day == 1:
+            return (date1 + timedelta(days=5)).strftime("%d.%m.%Y")
+        elif day == 2:
+            return (date1 + timedelta(days=4)).strftime("%d.%m.%Y")
+        elif day == 3:
+            return (date1 + timedelta(days=3)).strftime("%d.%m.%Y")
+        elif day == 4:
+            return (date1 + timedelta(days=2)).strftime("%d.%m.%Y")
+        elif day == 5:
+            return (date1 + timedelta(days=1)).strftime("%d.%m.%Y")
+        elif day == 6:
+            return date
+
+
 if __name__ == "__main__":
-    print(get_timetable_by_days("ВМ-ИВТ-2-1", "14.09.2023", "15.09.2023"))
-    # res = getDay("18.09.2023", "ВМ-ИВТ-2-1")
-    # for discipline in res["disciplines"]:
-    #     print(f'Название: {discipline["name"]}')
-    #     print(f'Время: {discipline["time"]}')
-    #     print(f'Преподаватель: {discipline["teacherName"]}')
-    #     print(f"Аудитория: {discipline['audienceId']}")
-    #
-    #     if discipline["subgroup"] == 0:
-    #         pass
-    #
-    #     if discipline["type"] == "lec":
-    #         print("Лекция")
-    #     print("")
+    dm = DateManager()
+    date = datetime.date(datetime.today()).strftime("%d.%m.%Y")
+    start = dm.get_start_of_week(date)
+    end = dm.get_end_of_week(date)
+    print(start, end, sep="\n")
