@@ -177,6 +177,33 @@ async def get_timetable_by_day(update: Update, context: ContextTypes.DEFAULT_TYP
             await query.answer()
             await query.edit_message_text(text)
 
+        case "3next_week":
+            start_of_week = service.DateManager().get_start_of_week(
+                datetime.date(datetime.today() + timedelta(days=7)).strftime("%d.%m.%Y"))
+            end_of_week = service.DateManager().get_end_of_week(
+                datetime.date(datetime.today() + timedelta(days=7)).strftime("%d.%m.%Y"))
+            group_name = dao.get(chat_id)
+            group_name = group_name[1:]
+            text = ""
+            week = service.get_timetable_by_days(group_name, start_of_week, end_of_week)
+            for day in week:
+                text = text + "\n***********************\n"
+                text = text + "Дата: " + day["date"] + "\n"
+                for timetable in day["disciplines"]:
+                    type = timetable['type']
+                    text = text + (f"Время: {timetable['time']}\n"
+                                   f"Название: {timetable['name']}\n"
+                                   f"Преподаватель: {timetable['teacherName']}\n"
+                                   f"Аудитория: {timetable['audienceId']}\n"
+                                   f"Тип пары: {current_type(type, chat_id)}\n"
+                                   f"----------------------\n"
+                                   )
+            query = update.callback_query
+            await query.answer()
+            await query.edit_message_text(text[:4096])
+            if len(text) > 4096:
+                await query.message.reply_text(text[4096:])
+
 
 async def save_group(chat_id, group, update: Update, context: ContextTypes.DEFAULT_TYPE):
     await bot.set_my_commands([BotCommand(command="get_timetable", description="Получить расписание"),
