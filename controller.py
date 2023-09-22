@@ -11,6 +11,7 @@ from datetime import datetime, timedelta
 
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # print(update.message.chat_id)
     if not testers.is_allow(update.message.chat_id):
         await update.message.reply_text("Access denied")
         return
@@ -122,73 +123,37 @@ async def get_timetable_by_day(update: Update, context: ContextTypes.DEFAULT_TYP
             day = day.strftime("%d.%m.%Y")
             group_name = dao.get(chat_id)
             group_name = group_name[1:]
-            text = ""
             timetable = service.get_timetable_by_day(group_name, day)
-            for day in timetable["disciplines"]:
-                type = day['type']
-                text = text + (f"Время: {day['time']}\n"
-                               f"Название: {day['name']}\n"
-                               f"Преподаватель: {day['teacherName']}\n"
-                               f"Аудитория: {day['audienceId']}\n"
-                               f"Тип пары: {current_type(type, chat_id)}\n"
-                               f"-----------------\n")
-
-            if text == "":
-                text = "Гуляйте"
-
+            image = service.get_image_by_day(timetable)
             query = update.callback_query
             await query.answer()
-            await query.edit_message_text(text)
+            await query.delete_message()
+            await bot.send_photo(query.message.chat_id, image)
+            # await query.edit_message_media(InputMediaPhoto(media=image))
 
         case "3tomorrow":
-            day = datetime.date(datetime.today()) + timedelta(days=3)
+            day = datetime.date(datetime.today()) + timedelta(days=1)
             day = day.strftime("%d.%m.%Y")
             group_name = dao.get(chat_id)
             group_name = group_name[1:]
-            text = ""
             timetable = service.get_timetable_by_day(group_name, day)
-            for day in timetable["disciplines"]:
-                type = day['type']
-                text = text + (f"Время: {day['time']}\n"
-                               f"Название: {day['name']}\n"
-                               f"Преподаватель: {day['teacherName']}\n"
-                               f"Аудитория: {day['audienceId']}\n"
-                               f"Тип пары: {current_type(type, chat_id)}\n"
-                               f"-----------------\n")
-
-            if text == "":
-                text = "Гуляйте"
-
+            image = service.get_image_by_day(timetable)
             query = update.callback_query
             await query.answer()
-            await query.edit_message_text(text)
+            await query.delete_message()
+            await bot.send_photo(query.message.chat_id, image)
 
         case "3current_week":
             start_of_week = service.DateManager().get_start_of_week(datetime.date(datetime.today()).strftime("%d.%m.%Y"))
             end_of_week = service.DateManager().get_end_of_week(datetime.date(datetime.today()).strftime("%d.%m.%Y"))
             group_name = dao.get(chat_id)
             group_name = group_name[1:]
-            text = ""
             week = service.get_timetable_by_days(group_name, start_of_week, end_of_week)
-            for day in week:
-                text = text + "\n***********************\n"
-                text = text + "Дата: " + day["date"] + "\n"
-                for timetable in day["disciplines"]:
-                    type = timetable['type']
-                    text = text + (f"Время: {timetable['time']}\n"
-                                   f"Название: {timetable['name']}\n"
-                                   f"Преподаватель: {timetable['teacherName']}\n"
-                                   f"Аудитория: {timetable['audienceId']}\n"
-                                   f"Тип пары: {current_type(type, chat_id)}\n"
-                                   f"----------------------\n"
-                                   )
-
-            if text == "":
-                text = "Гуляйте"
-
+            image = service.get_image_by_6_days(week)
             query = update.callback_query
             await query.answer()
-            await query.edit_message_text(text)
+            await query.delete_message()
+            await bot.send_photo(query.message.chat_id, image)
 
         case "3next_week":
             start_of_week = service.DateManager().get_start_of_week(
@@ -197,36 +162,18 @@ async def get_timetable_by_day(update: Update, context: ContextTypes.DEFAULT_TYP
                 datetime.date(datetime.today() + timedelta(days=7)).strftime("%d.%m.%Y"))
             group_name = dao.get(chat_id)
             group_name = group_name[1:]
-            text = ""
             week = service.get_timetable_by_days(group_name, start_of_week, end_of_week)
-            for day in week:
-                text = text + "\n***********************\n"
-                text = text + "Дата: " + day["date"] + "\n"
-                for timetable in day["disciplines"]:
-                    type = timetable['type']
-                    text = text + (f"Время: {timetable['time']}\n"
-                                   f"Название: {timetable['name']}\n"
-                                   f"Преподаватель: {timetable['teacherName']}\n"
-                                   f"Аудитория: {timetable['audienceId']}\n"
-                                   f"Тип пары: {current_type(type, chat_id)}\n"
-                                   f"----------------------\n"
-                                   )
-
-            if text == "":
-                text = "Гуляйте"
-
+            image = service.get_image_by_6_days(week)
             query = update.callback_query
             await query.answer()
-            await query.edit_message_text(text[:4096])
-            if len(text) > 4096:
-                await query.message.reply_text(text[4096:])
+            await query.delete_message()
+            await bot.send_photo(query.message.chat_id, image)
 
 
 async def group_change(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await bot.set_my_commands([])
     await select_faculty(update, context)
     dao.delete(update.message.chat_id)
-
 
 
 async def save_group(chat_id, group, update: Update, context: ContextTypes.DEFAULT_TYPE):

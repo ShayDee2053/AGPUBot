@@ -2,6 +2,7 @@ import json
 import requests
 import abbreviation
 from datetime import (datetime, timedelta)
+from io import BytesIO
 
 
 url = "http://merqury.fun:8080/api/timetable/groups"
@@ -44,6 +45,16 @@ def get_timetable_by_days(group_name, start_date, end_date):
     return json.loads(response.text)
 
 
+def get_image_by_day(json):
+    response = requests.post("http://merqury.fun:8080/api/timetable/image/day?vertical", json=json)
+    return BytesIO(response.content).getvalue()
+
+
+def get_image_by_6_days(json):
+    response = requests.post("http://merqury.fun:8080/api/timetable/image/6days?horizontal", json=json)
+    return BytesIO(response.content).getvalue()
+
+
 class DateManager:
     @staticmethod
     def get_start_of_week(date: str):
@@ -69,24 +80,19 @@ class DateManager:
         date1 = datetime.strptime(date, "%d.%m.%Y")
         day = date1.weekday()
         if day == 0:
-            return (date1 + timedelta(days=6)).strftime("%d.%m.%Y")
-        elif day == 1:
             return (date1 + timedelta(days=5)).strftime("%d.%m.%Y")
-        elif day == 2:
+        elif day == 1:
             return (date1 + timedelta(days=4)).strftime("%d.%m.%Y")
-        elif day == 3:
+        elif day == 2:
             return (date1 + timedelta(days=3)).strftime("%d.%m.%Y")
-        elif day == 4:
+        elif day == 3:
             return (date1 + timedelta(days=2)).strftime("%d.%m.%Y")
-        elif day == 5:
+        elif day == 4:
             return (date1 + timedelta(days=1)).strftime("%d.%m.%Y")
-        elif day == 6:
-            return date
+        elif day == 5:
+            return date1
 
 
 if __name__ == "__main__":
-    dm = DateManager()
-    date = datetime.date(datetime.today()).strftime("%d.%m.%Y")
-    start = dm.get_start_of_week(date)
-    end = dm.get_end_of_week(date)
-    print(start, end, sep="\n")
+    result = get_timetable_by_day("ВМ-ИВТ-2-1", "21.09.2023")
+    print(type(get_image_by_day(result).getvalue()))
