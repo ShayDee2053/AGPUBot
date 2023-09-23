@@ -78,7 +78,7 @@ async def handle_pressing_button(update: Update, context: ContextTypes.DEFAULT_T
     await query.edit_message_text(text=f"Selected option: {query.data}")
 
 
-dao = InMemoryDao()
+dao = DatabaseDao()
 
 
 def current_type(type, chat_id):
