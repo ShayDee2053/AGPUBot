@@ -90,9 +90,8 @@ class DateManager:
         elif day == 4:
             return (date1 + timedelta(days=1)).strftime("%d.%m.%Y")
         elif day == 5:
-            return date1
+            return date1.strftime("%d.%m.%Y")
 
 
 if __name__ == "__main__":
-    result = get_timetable_by_day("ВМ-ИВТ-2-1", "21.09.2023")
-    print(type(get_image_by_day(result).getvalue()))
+    get_timetable_by_days("ВМ-ИВТ-2-1", "18.09.2023", "23.09.2023")
