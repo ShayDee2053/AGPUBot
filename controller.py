@@ -187,9 +187,7 @@ async def save_group(chat_id, group, update: Update, context: ContextTypes.DEFAU
 
 
 async def get_timetable(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    try:
-        dao.get(update.message.chat_id)
-    except:
+    if dao.get(update.message.chat_id) == None:
         await update.message.reply_text(text="Сначала выберите группу")
         return
     keyboard_buttons = [

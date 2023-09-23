@@ -13,8 +13,8 @@ class Dao:
 
 
 class DatabaseDao(Dao):
-    def __init__(self):
-        self.connection = pc2.connect(
+    def get_connection(self):
+        return pc2.connect(
             user=secrets.user,
             password=secrets.password,
             host=secrets.host,
@@ -23,26 +23,32 @@ class DatabaseDao(Dao):
         )
 
     def save(self, id, group):
-        cursor = self.connection.cursor()
+        connection = self.get_connection()
+        cursor = connection.cursor()
         cursor.execute(f"INSERT INTO groups VALUES ({id}, '{group}')")
-        self.connection.commit()
+        connection.commit()
         cursor.close()
+        connection.close()
 
     def get(self, id):
-        cursor = self.connection.cursor()
+        connection = self.get_connection()
+        cursor = connection.cursor()
         cursor.execute(f"SELECT group_name FROM groups WHERE chat_id={id}")
         response = cursor.fetchone()
         if response is None:
             return None
         response = response[0]
         cursor.close()
+        connection.close()
         return response
 
     def delete(self, id):
-        cursor = self.connection.cursor()
+        connection = self.get_connection()
+        cursor = connection.cursor()
         cursor.execute(f"DELETE FROM groups WHERE chat_id={id}")
-        self.connection.commit()
+        connection.commit()
         cursor.close()
+        connection.close()
 
 
 class InMemoryDao(Dao):
