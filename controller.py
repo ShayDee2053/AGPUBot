@@ -15,6 +15,10 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not testers.is_allow(update.message.chat_id):
         await update.message.reply_text("Access denied")
         return
+    if dao.get(update.message.chat_id) is not None:
+        dao.delete(update.message.chat_id)
+        await select_faculty(update, context)
+        return
 
     await select_faculty(update, context)
 
@@ -81,45 +85,10 @@ async def handle_pressing_button(update: Update, context: ContextTypes.DEFAULT_T
 dao = DatabaseDao()
 
 
-def current_type(type, chat_id):
-    match type:
-        case "lec":
-            type = "Лекция"
-            return type
-        case "prac":
-            type = "Практика"
-            return type
-        case "exam":
-            type = "Экзамен"
-            return type
-        case "lab":
-            if (chat_id == 974335854) or (chat_id == 504728940) or (chat_id == 1258770584):
-                type = "Сидим дома бляд"
-                return type
-            else:
-                type = "Лаб. работа"
-                return type
-        case "hol":
-            type = "Выходной"
-            return type
-        case "cred":
-            type = "Зачет"
-            return type
-        case "cons":
-            type = "Консультация"
-            return type
-        case "fepo":
-            type = "ФЭПО"
-            return type
-        case "none":
-            type = "Я хз"
-            return type
-
-
 async def get_timetable_by_day(update: Update, context: ContextTypes.DEFAULT_TYPE, day, chat_id):
     match day:
         case "3today":
-            day = datetime.date(datetime.today())
+            day = datetime.date(datetime.today() + timedelta(hours=3))
             day = day.strftime("%d.%m.%Y")
             group_name = dao.get(chat_id)
             group_name = group_name[1:]
@@ -129,10 +98,9 @@ async def get_timetable_by_day(update: Update, context: ContextTypes.DEFAULT_TYP
             await query.answer()
             await query.delete_message()
             await bot.send_photo(query.message.chat_id, image)
-            # await query.edit_message_media(InputMediaPhoto(media=image))
 
         case "3tomorrow":
-            day = datetime.date(datetime.today()) + timedelta(days=1)
+            day = datetime.date(datetime.today() + timedelta(days=1, hours=3))
             day = day.strftime("%d.%m.%Y")
             group_name = dao.get(chat_id)
             group_name = group_name[1:]
@@ -144,8 +112,8 @@ async def get_timetable_by_day(update: Update, context: ContextTypes.DEFAULT_TYP
             await bot.send_photo(query.message.chat_id, image)
 
         case "3current_week":
-            start_of_week = service.DateManager().get_start_of_week(datetime.date(datetime.today()).strftime("%d.%m.%Y"))
-            end_of_week = service.DateManager().get_end_of_week(datetime.date(datetime.today()).strftime("%d.%m.%Y"))
+            start_of_week = service.DateManager().get_start_of_week(datetime.date(datetime.today()+timedelta(hours=3)).strftime("%d.%m.%Y"))
+            end_of_week = service.DateManager().get_end_of_week(datetime.date(datetime.today()+timedelta(hours=3)).strftime("%d.%m.%Y"))
             group_name = dao.get(chat_id)
             group_name = group_name[1:]
             week = service.get_timetable_by_days(group_name, start_of_week, end_of_week)
@@ -157,9 +125,9 @@ async def get_timetable_by_day(update: Update, context: ContextTypes.DEFAULT_TYP
 
         case "3next_week":
             start_of_week = service.DateManager().get_start_of_week(
-                datetime.date(datetime.today() + timedelta(days=7)).strftime("%d.%m.%Y"))
+                datetime.date(datetime.today() + timedelta(days=7,hours=3)).strftime("%d.%m.%Y"))
             end_of_week = service.DateManager().get_end_of_week(
-                datetime.date(datetime.today() + timedelta(days=7)).strftime("%d.%m.%Y"))
+                datetime.date(datetime.today() + timedelta(days=7, hours=3)).strftime("%d.%m.%Y"))
             group_name = dao.get(chat_id)
             group_name = group_name[1:]
             week = service.get_timetable_by_days(group_name, start_of_week, end_of_week)
@@ -171,6 +139,9 @@ async def get_timetable_by_day(update: Update, context: ContextTypes.DEFAULT_TYP
 
 
 async def group_change(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not testers.is_allow(update.message.chat_id):
+        await update.message.reply_text("Access denied")
+        return
     await bot.set_my_commands([])
     await select_faculty(update, context)
     dao.delete(update.message.chat_id)
@@ -187,6 +158,9 @@ async def save_group(chat_id, group, update: Update, context: ContextTypes.DEFAU
 
 
 async def get_timetable(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not testers.is_allow(update.message.chat_id):
+        await update.message.reply_text("Access denied")
+        return
     if dao.get(update.message.chat_id) == None:
         await update.message.reply_text(text="Сначала выберите группу")
         return
@@ -201,7 +175,8 @@ async def get_timetable(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 bot = Bot(token=secrets.TOKEN)
 
-if __name__ == '__main__':
+
+def main():
     print("Starting...")
     app = Application.builder().token(secrets.TOKEN).build()
 
@@ -216,3 +191,7 @@ if __name__ == '__main__':
     # Polls the bot
     print("Polling...")
     app.run_polling()
+
+
+if __name__ == '__main__':
+    main()

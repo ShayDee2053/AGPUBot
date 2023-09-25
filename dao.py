@@ -67,5 +67,4 @@ class InMemoryDao(Dao):
 
 if __name__ == '__main__':
     a = DatabaseDao()
-    a.delete(228228)
-    print((a.get(228228)))
+    print((a.get(1258770584)))

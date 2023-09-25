@@ -40,8 +40,7 @@ def get_timetable_by_day(group_name, date):
 
 def get_timetable_by_days(group_name, start_date, end_date):
     url_2 = "http://merqury.fun:8080/api/timetable/days?"
-    response = requests.get(url_2 + "groupId=" + group_name + "&startDate=" + start_date +
-                            "&endDate=" + end_date + "&removeEmptyDays")
+    response = requests.get(url_2 + "groupId=" + group_name + "&startDate=" + start_date + "&endDate=" + end_date)
     return json.loads(response.text)
 
 
@@ -61,7 +60,7 @@ class DateManager:
         date1 = datetime.strptime(date, "%d.%m.%Y")
         day = date1.weekday()
         if day == 0:
-            return date
+            return date1.strftime("%d.%m.%Y")
         elif day == 1:
             return (date1 - timedelta(days=day)).strftime("%d.%m.%Y")
         elif day == 2:
@@ -91,7 +90,10 @@ class DateManager:
             return (date1 + timedelta(days=1)).strftime("%d.%m.%Y")
         elif day == 5:
             return date1.strftime("%d.%m.%Y")
+        elif day == 6:
+            return (date1 - timedelta(days=1)).strftime("%d.%m.%Y")
 
 
 if __name__ == "__main__":
-    get_timetable_by_days("ВМ-ИВТ-2-1", "18.09.2023", "23.09.2023")
+    print(datetime.date(datetime.today() + timedelta(hours=3, days=1)).strftime("%d.%m.%Y"))
+    # get_timetable_by_days("ВМ-ИВТ-2-1", "18.09.2023", "23.09.2023")
