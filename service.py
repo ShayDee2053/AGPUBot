@@ -4,13 +4,15 @@ import abbreviation
 from datetime import (datetime, timedelta)
 from io import BytesIO
 
-
-url = "http://merqury.fun:8080/api/timetable/groups"
-response = requests.get(url)
-groups = json.loads(response.text)
-
+host = "merqury.fun"
 
 def getFaculties():
+    url = f"http://{host}/api/timetable/groups"
+    try:
+        response = requests.get(url)
+    except:
+        return "error"
+    groups = json.loads(response.text)
     res = []
     for group in groups:
         res.append(group["facultyName"])
@@ -18,39 +20,60 @@ def getFaculties():
 
 
 def getGroupsByFaculty(facultyName: str):
+    url = f"http://{host}/api/timetable/groups"
+    try:
+        response = requests.get(url)
+    except:
+        return "error"
+    groups = json.loads(response.text)
     for group in groups:
         if abbreviation.abbreviation(group["facultyName"]) == facultyName:
             return list(group["groups"])
     return None
 
 
-new_url = "http://merqury.fun:8080/api/timetable/day?"
+new_url = f"http://{host}/api/timetable/day?"
 
 
 def getDay(date, group_name):
-    response = requests.get(new_url + "date=" + date + "&groupId=" + group_name)
+    try:
+        response = requests.get(new_url + "date=" + date + "&groupId=" + group_name)
+    except:
+        return "error"
     return json.loads(response.text)
 
 
 def get_timetable_by_day(group_name, date):
-    url_1 = "http://merqury.fun:8080/api/timetable/day?"
-    response = requests.get(url_1 + "groupId=" + group_name + "&date=" + date)
+    url_1 = f"http://{host}/api/timetable/day?"
+    try:
+        response = requests.get(url_1 + "groupId=" + group_name + "&date=" + date)
+    except:
+        return "error"
     return json.loads(response.text)
 
 
 def get_timetable_by_days(group_name, start_date, end_date):
-    url_2 = "http://merqury.fun:8080/api/timetable/days?"
-    response = requests.get(url_2 + "groupId=" + group_name + "&startDate=" + start_date + "&endDate=" + end_date)
+    url_2 = f"http://{host}/api/timetable/days?"
+    try:
+        response = requests.get(url_2 + "groupId=" + group_name + "&startDate=" + start_date + "&endDate=" + end_date)
+    except:
+        return "error"
     return json.loads(response.text)
 
 
 def get_image_by_day(json):
-    response = requests.post("http://merqury.fun:8080/api/timetable/image/day?vertical", json=json)
+    try:
+        response = requests.post(f"http://{host}/api/timetable/image/day?vertical", json=json)
+    except:
+        return "error"
     return BytesIO(response.content).getvalue()
 
 
 def get_image_by_6_days(json):
-    response = requests.post("http://merqury.fun:8080/api/timetable/image/6days?horizontal", json=json)
+    try:
+        response = requests.post(f"http://{host}/api/timetable/image/6days?horizontal", json=json)
+    except:
+        return "error"
     return BytesIO(response.content).getvalue()
 
 

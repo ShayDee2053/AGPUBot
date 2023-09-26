@@ -14,6 +14,10 @@ class Dao:
 
 class DatabaseDao(Dao):
     def get_connection(self):
+        try:
+            pc2.connect(user=secrets.user, password=secrets.password, host=secrets.host, database=secrets.database, port=secrets.port)
+        except:
+            return "db_error"
         return pc2.connect(
             user=secrets.user,
             password=secrets.password,
@@ -24,6 +28,8 @@ class DatabaseDao(Dao):
 
     def save(self, id, group):
         connection = self.get_connection()
+        if connection == "db_error":
+            return "db_error"
         cursor = connection.cursor()
         cursor.execute(f"INSERT INTO groups VALUES ({id}, '{group}')")
         connection.commit()
@@ -32,6 +38,8 @@ class DatabaseDao(Dao):
 
     def get(self, id):
         connection = self.get_connection()
+        if connection == "db_error":
+            return "db_error"
         cursor = connection.cursor()
         cursor.execute(f"SELECT group_name FROM groups WHERE chat_id={id}")
         response = cursor.fetchone()
@@ -42,8 +50,15 @@ class DatabaseDao(Dao):
         connection.close()
         return response
 
+    def is_available(self):
+        if self.get_connection() == "db_error":
+            return False
+        return True
+
     def delete(self, id):
         connection = self.get_connection()
+        if connection == "db_error":
+            return "db_error"
         cursor = connection.cursor()
         cursor.execute(f"DELETE FROM groups WHERE chat_id={id}")
         connection.commit()

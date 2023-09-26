@@ -11,9 +11,11 @@ from datetime import datetime, timedelta
 
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # print(update.message.chat_id)
     if not testers.is_allow(update.message.chat_id):
         await update.message.reply_text("Access denied")
+        return
+    if not dao.is_available():
+        await update.message.reply_text("Ошибка подключения к базе данных, попробуйте позже")
         return
     if dao.get(update.message.chat_id) is not None:
         dao.delete(update.message.chat_id)
@@ -25,6 +27,9 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def select_faculty(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard_buttons = [[]]
+    if service.getFaculties() == "error":
+        await update.message.reply_text(text="На сервере ведутся технические работы, попробуйте позже", reply_markup=None)
+        return
     for faculty in service.getFaculties():
         keyboard_buttons.append([InlineKeyboardButton(text=abbreviation.abbreviation(faculty),
                                                       callback_data="1" + abbreviation.abbreviation(faculty))])
@@ -38,6 +43,9 @@ async def select_group(faculty: str, update: Update):
     await query.answer()
     keyboard_buttons = [[]]
     count_columns = 2
+    if service.getGroupsByFaculty(faculty) == "error":
+        await query.edit_message_text("На сервере ведутся технические работы, попробуйте позже")
+        return
     groups = service.getGroupsByFaculty(faculty)[:76]
     for i in range(0, int(len(groups) / count_columns)):
         row = []
@@ -62,6 +70,9 @@ async def handle_pressing_button(update: Update, context: ContextTypes.DEFAULT_T
 
     if query.data == "2cancel":
         keyboard_buttons = [[]]
+        if service.getFaculties() == "error":
+            await query.edit_message_text("На сервере ведутся технические работы, попробуйте позже")
+            return
         for faculty in service.getFaculties():
             keyboard_buttons.append([InlineKeyboardButton(text=abbreviation.abbreviation(faculty),
                                                           callback_data="1" + abbreviation.abbreviation(faculty))])
@@ -71,6 +82,13 @@ async def handle_pressing_button(update: Update, context: ContextTypes.DEFAULT_T
         return
 
     if query.data[0] == "2":
+        if not dao.is_available():
+            await update.callback_query.edit_message_text("Ошибка подключения к базе данных, попробуйте позже")
+            return
+        if dao.get(query.message.chat_id) is not None:
+            dao.delete(query.message.chat_id)
+            await save_group(update.callback_query.message.chat_id, query.data, update, context)
+            return
         await save_group(update.callback_query.message.chat_id, query.data, update, context)
         return
 
@@ -88,10 +106,19 @@ dao = DatabaseDao()
 async def get_timetable_by_day(update: Update, context: ContextTypes.DEFAULT_TYPE, day, chat_id):
     match day:
         case "3today":
+            if not dao.is_available():
+                await update.callback_query.edit_message_text("Ошибка подключения к базе данных, попробуйте позже")
+                return
+            if dao.get(update.callback_query.message.chat_id) is None:
+                await update.callback_query.edit_message_text("Сначала выберите группу")
+                return
             day = datetime.date(datetime.today() + timedelta(hours=3))
             day = day.strftime("%d.%m.%Y")
             group_name = dao.get(chat_id)
             group_name = group_name[1:]
+            if service.getFaculties() == "error":
+                await update.callback_query.edit_message_text("На сервере ведутся технические работы, попробуйте позже")
+                return
             timetable = service.get_timetable_by_day(group_name, day)
             image = service.get_image_by_day(timetable)
             query = update.callback_query
@@ -100,10 +127,19 @@ async def get_timetable_by_day(update: Update, context: ContextTypes.DEFAULT_TYP
             await bot.send_photo(query.message.chat_id, image)
 
         case "3tomorrow":
+            if not dao.is_available():
+                await update.callback_query.edit_message_text("Ошибка подключения к базе данных, попробуйте позже")
+                return
+            if dao.get(update.callback_query.message.chat_id) is None:
+                await update.callback_query.edit_message_text("Сначала выберите группу")
+                return
             day = datetime.date(datetime.today() + timedelta(days=1, hours=3))
             day = day.strftime("%d.%m.%Y")
             group_name = dao.get(chat_id)
             group_name = group_name[1:]
+            if service.getFaculties() == "error":
+                await update.callback_query.edit_message_text("На сервере ведутся технические работы, попробуйте позже")
+                return
             timetable = service.get_timetable_by_day(group_name, day)
             image = service.get_image_by_day(timetable)
             query = update.callback_query
@@ -112,10 +148,19 @@ async def get_timetable_by_day(update: Update, context: ContextTypes.DEFAULT_TYP
             await bot.send_photo(query.message.chat_id, image)
 
         case "3current_week":
+            if not dao.is_available():
+                await update.callback_query.edit_message_text("Ошибка подключения к базе данных, попробуйте позже")
+                return
+            if dao.get(update.callback_query.message.chat_id) is None:
+                await update.callback_query.edit_message_text("Сначала выберите группу")
+                return
             start_of_week = service.DateManager().get_start_of_week(datetime.date(datetime.today()+timedelta(hours=3)).strftime("%d.%m.%Y"))
             end_of_week = service.DateManager().get_end_of_week(datetime.date(datetime.today()+timedelta(hours=3)).strftime("%d.%m.%Y"))
             group_name = dao.get(chat_id)
             group_name = group_name[1:]
+            if service.getFaculties() == "error":
+                await update.callback_query.edit_message_text("На сервере ведутся технические работы, попробуйте позже")
+                return
             week = service.get_timetable_by_days(group_name, start_of_week, end_of_week)
             image = service.get_image_by_6_days(week)
             query = update.callback_query
@@ -124,12 +169,21 @@ async def get_timetable_by_day(update: Update, context: ContextTypes.DEFAULT_TYP
             await bot.send_photo(query.message.chat_id, image)
 
         case "3next_week":
+            if not dao.is_available():
+                await update.callback_query.edit_message_text("Ошибка подключения к базе данных, попробуйте позже")
+                return
+            if dao.get(update.callback_query.message.chat_id) is None:
+                await update.callback_query.edit_message_text("Сначала выберите группу")
+                return
             start_of_week = service.DateManager().get_start_of_week(
                 datetime.date(datetime.today() + timedelta(days=7,hours=3)).strftime("%d.%m.%Y"))
             end_of_week = service.DateManager().get_end_of_week(
                 datetime.date(datetime.today() + timedelta(days=7, hours=3)).strftime("%d.%m.%Y"))
             group_name = dao.get(chat_id)
             group_name = group_name[1:]
+            if service.getFaculties() == "error":
+                await update.callback_query.edit_message_text("На сервере ведутся технические работы, попробуйте позже")
+                return
             week = service.get_timetable_by_days(group_name, start_of_week, end_of_week)
             image = service.get_image_by_6_days(week)
             query = update.callback_query
@@ -142,12 +196,18 @@ async def group_change(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not testers.is_allow(update.message.chat_id):
         await update.message.reply_text("Access denied")
         return
+    if not dao.is_available():
+        await update.message.reply_text("Ошибка подключения к базе данных, попробуйте позже")
+        return
     await bot.set_my_commands([])
     await select_faculty(update, context)
     dao.delete(update.message.chat_id)
 
 
 async def save_group(chat_id, group, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not dao.is_available():
+        await update.callback_query.edit_message_text("Ошибка подключения к базе данных, попробуйте позже")
+        return
     await bot.set_my_commands([BotCommand(command="get_timetable", description="Получить расписание"),
                                BotCommand(command="change_group", description="Изменить группу")])
     dao.save(chat_id, group)
@@ -161,7 +221,10 @@ async def get_timetable(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not testers.is_allow(update.message.chat_id):
         await update.message.reply_text("Access denied")
         return
-    if dao.get(update.message.chat_id) == None:
+    if not dao.is_available():
+        await update.message.reply_text("Ошибка подключения к базе данных, попробуйте позже")
+        return
+    if dao.get(update.message.chat_id) is None:
         await update.message.reply_text(text="Сначала выберите группу")
         return
     keyboard_buttons = [
@@ -182,7 +245,6 @@ def main():
 
     # Commands
     app.add_handler(CommandHandler('start', start_command))
-    # app.add_handler(CommandHandler('stop', end_command))
     app.add_handler(CommandHandler("get_timetable", get_timetable))
     app.add_handler(CommandHandler("change_group", group_change))
     # Queries
