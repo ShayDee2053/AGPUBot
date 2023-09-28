@@ -11,9 +11,9 @@ from datetime import datetime, timedelta
 
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not testers.is_allow(update.message.chat_id):
-        await update.message.reply_text("Access denied")
-        return
+    # if not testers.is_allow(update.message.chat_id):
+    #     await update.message.reply_text("Access denied")
+    #     return
     if not dao.is_available():
         await update.message.reply_text("Ошибка подключения к базе данных, попробуйте позже")
         return
@@ -193,9 +193,9 @@ async def get_timetable_by_day(update: Update, context: ContextTypes.DEFAULT_TYP
 
 
 async def group_change(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not testers.is_allow(update.message.chat_id):
-        await update.message.reply_text("Access denied")
-        return
+    # if not testers.is_allow(update.message.chat_id):
+    #     await update.message.reply_text("Access denied")
+    #     return
     if not dao.is_available():
         await update.message.reply_text("Ошибка подключения к базе данных, попробуйте позже")
         return
@@ -210,7 +210,7 @@ async def save_group(chat_id, group, update: Update, context: ContextTypes.DEFAU
         return
     await bot.set_my_commands([BotCommand(command="get_timetable", description="Получить расписание"),
                                BotCommand(command="change_group", description="Изменить группу")])
-    dao.save(chat_id, group)
+    dao.save(chat_id, group, update.callback_query.from_user.username)
     query = update.callback_query
     await query.answer()
     await query.edit_message_text(text="Ваш выбор успешно сохранен\n"
@@ -218,9 +218,9 @@ async def save_group(chat_id, group, update: Update, context: ContextTypes.DEFAU
 
 
 async def get_timetable(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not testers.is_allow(update.message.chat_id):
-        await update.message.reply_text("Access denied")
-        return
+    # if not testers.is_allow(update.message.chat_id):
+    #     await update.message.reply_text("Access denied")
+    #     return
     if not dao.is_available():
         await update.message.reply_text("Ошибка подключения к базе данных, попробуйте позже")
         return
