@@ -210,7 +210,7 @@ async def save_group(chat_id, group, update: Update, context: ContextTypes.DEFAU
         return
     await bot.set_my_commands([BotCommand(command="get_timetable", description="Получить расписание"),
                                BotCommand(command="change_group", description="Изменить группу")])
-    dao.save(chat_id, group, update.callback_query.from_user.username)
+    dao.save(chat_id, group, update.callback_query.from_user.username, update.callback_query.from_user.first_name)
     query = update.callback_query
     await query.answer()
     await query.edit_message_text(text="Ваш выбор успешно сохранен\n"
