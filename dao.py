@@ -8,6 +8,12 @@ class Dao:
     def get(self, id):
         pass
 
+    def get_username_by_id(self, chat_id):
+        pass
+
+    def get_ids_by_group(self, group_name):
+        pass
+
     def delete(self, id):
         pass
 
@@ -37,6 +43,34 @@ class DatabaseDao(Dao):
         connection.commit()
         cursor.close()
         connection.close()
+
+    def get_ids_by_group(self, group_name):
+        connection = self.get_connection()
+        if connection == "db_error":
+            return "db_error"
+        cursor = connection.cursor()
+        cursor.execute(f"select chat_id from groups where group_name='2{group_name}'")
+        ids = []
+        response = cursor.fetchall()
+        for row in response:
+            ids.append(row[0])
+        cursor.close()
+        connection.close()
+        return ids
+
+    def get_username_by_id(self, chat_id):
+        connection = self.get_connection()
+        if connection == "db_error":
+            return "db_error"
+        cursor = connection.cursor()
+        cursor.execute(f"select user_name from usernames where chat_id={chat_id}")
+        response = cursor.fetchone()
+        if response is None:
+            return None
+        response = response[0]
+        cursor.close()
+        connection.close()
+        return response
 
     def get(self, id):
         connection = self.get_connection()
@@ -86,4 +120,4 @@ class InMemoryDao(Dao):
 
 if __name__ == '__main__':
     a = DatabaseDao()
-    print((a.get(1258770584)))
+    print(a.get_ids_by_group("ВМ-ИВТ-2-1"))

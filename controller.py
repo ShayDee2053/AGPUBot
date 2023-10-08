@@ -1,5 +1,7 @@
 from telegram import Update
 from telegram.ext import *
+import threading
+import notification_handler
 import secrets
 import testers
 import service
@@ -240,6 +242,8 @@ bot = Bot(token=secrets.TOKEN)
 
 
 def main():
+    thread = threading.Thread(target=notification_handler.task_observer)
+    thread.start()
     print("Starting...")
     app = Application.builder().token(secrets.TOKEN).build()
 
@@ -249,7 +253,8 @@ def main():
     app.add_handler(CommandHandler("change_group", group_change))
     # Queries
     app.add_handler(CallbackQueryHandler(handle_pressing_button))
-
+    thread = threading.Thread(target=notification_handler.start_listening_port)
+    thread.start()
     # Polls the bot
     print("Polling...")
     app.run_polling()
